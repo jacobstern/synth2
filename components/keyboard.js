@@ -21,6 +21,36 @@ export default class extends Component {
     this._paintCanvas()
   }
 
+  _onMouseDown = event => {
+    this._activateMouseNote(event.clientX, event.clientY)
+  }
+
+  _onMouseMove = event => {
+    this._activateMouseNote(event.clientX, event.clientY)
+  }
+
+  _onMouseUp = event => {
+    this._deactivateMouseNote()
+  }
+
+  _onMouseOut = event => {
+    this._deactivateMouseNote()
+  }
+
+  _activateMouseNote (x, y) {
+
+  }
+
+  _deactivateMouseNote () {
+
+  }
+
+  _hitTestNote (x, y) {
+    let note = -1
+
+    return note
+  }
+
   render () {
     const { css, style } = this.props
     return (
@@ -28,7 +58,13 @@ export default class extends Component {
         style={style}
         className={merge(styles.root, css)}
       >
-        <canvas ref={this._setCanvasRef} />
+        <canvas
+          ref={this._setCanvasRef}
+          onMouseDown={this._onMouseDown}
+          onMouseMove={this._onMouseMove}
+          onMouseUp={this._onMouseUp}
+          onMouseOut={this._onMouseOut}
+        />
       </div>
     )
   }

@@ -13,6 +13,8 @@ export default class extends Component {
   }
 
   componentDidMount () {
-    Playback.init()
+    if (!Playback.initialized) {
+      Playback.init()
+    }
   }
 }
