@@ -6,8 +6,21 @@ export default class extends Component {
   _paintCanvas () {
     const ctx = this._canvas.getContext('2d')
 
-    ctx.fillStyle = '#30303A'
+    ctx.fillStyle = '#2265B0'
     ctx.fillRect(0, 0, 600, 150)
+
+    ctx.fillStyle = '#2A2A36'
+    for (let i = 1; i < 18; i++) {
+      // Space between white keys
+      ctx.fillRect(i * 33.33 - 1, 0, 2, 150)
+    }
+
+    for (let i = 0; i < 18; i++) {
+      if (i % 7 !== 0 && i % 7 !== 3) {
+        // Black keys
+        ctx.fillRect((i * 33.33) - 13, 0, 26, 85)
+      }
+    }
   }
 
   _setCanvasRef = ref => {
