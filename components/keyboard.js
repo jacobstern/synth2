@@ -1,24 +1,49 @@
 import { Component } from 'react'
 import css, { merge } from 'next/css'
 
+const KEYBOARD_WIDTH = 600
+const KEYBOARD_HEIGHT = 150
+const BLACK_KEY_WIDTH = 30
+const BLACK_KEY_HALF_WIDTH = BLACK_KEY_WIDTH / 2
+const NUM_WHITE_KEYS = 14
+const KEY_WIDTH = KEYBOARD_WIDTH / NUM_WHITE_KEYS
+const BLACK_KEY_HEIGHT = 82
+
 export default class extends Component {
+
+  constructor (props) {
+    super(props)
+    this._mouseNote = -1
+    this._notes = []
+  }
+
+  componentWillUnmount () {
+    const { onNoteDeactivated } = this.props
+    if (onNoteDeactivated) {
+      this._notes.forEach(onNoteDeactivated)
+    }
+
+    this._mouseNote = -1
+    this._notes = []
+  }
 
   _paintCanvas () {
     const ctx = this._canvas.getContext('2d')
 
     ctx.fillStyle = '#2265B0'
-    ctx.fillRect(0, 0, 600, 150)
+    ctx.fillRect(0, 0, KEYBOARD_WIDTH, KEYBOARD_HEIGHT)
 
     ctx.fillStyle = '#2A2A36'
-    for (let i = 1; i < 18; i++) {
+    for (let i = 1; i < NUM_WHITE_KEYS; i++) {
       // Space between white keys
-      ctx.fillRect(i * 33.33 - 1, 0, 2, 150)
+      ctx.fillRect(i * KEY_WIDTH - 1, 0, 2, 150)
     }
 
-    for (let i = 0; i < 18; i++) {
-      if (i % 7 !== 0 && i % 7 !== 3) {
+    for (let i = 0; i < NUM_WHITE_KEYS; i++) {
+      const indexInOctave = i % 7
+      if (indexInOctave !== 0 && indexInOctave !== 3) {
         // Black keys
-        ctx.fillRect((i * 33.33) - 13, 0, 26, 85)
+        ctx.fillRect((i * KEY_WIDTH) - BLACK_KEY_HALF_WIDTH, 0, BLACK_KEY_WIDTH, BLACK_KEY_HEIGHT)
       }
     }
   }
@@ -29,17 +54,19 @@ export default class extends Component {
       return
     }
 
-    this._canvas.width = 600
-    this._canvas.height = 150
+    this._canvas.width = KEYBOARD_WIDTH
+    this._canvas.height = KEYBOARD_HEIGHT
     this._paintCanvas()
   }
 
   _onMouseDown = event => {
-    this._activateMouseNote(event.clientX, event.clientY)
+    this._activateMouseNote(event)
   }
 
   _onMouseMove = event => {
-    this._activateMouseNote(event.clientX, event.clientY)
+    if (this._mouseNote !== -1) {
+      this._activateMouseNote(event)
+    }
   }
 
   _onMouseUp = event => {
@@ -50,18 +77,80 @@ export default class extends Component {
     this._deactivateMouseNote()
   }
 
-  _activateMouseNote (x, y) {
+  _activateMouseNote (mouseEvent) {
+    const x = mouseEvent.pageX - this._canvas.offsetLeft
+    const y = mouseEvent.pageY - this._canvas.offsetTop
+    const note = this._hitTestNote(x, y)
 
+    if (note === -1) {
+      this._deactivateMouseNote()
+    } else {
+      if (this._mouseNote !== note) {
+        this._deactivateNote(this._mouseNote)
+      }
+      this._mouseNote = note
+      this._activateNote(note)
+    }
   }
 
   _deactivateMouseNote () {
+    if (this._mouseNote !== -1) {
+      this._deactivateNote(this._mouseNote)
+    }
+    this._mouseNote = -1
+  }
 
+  _activateNote (note) {
+    if (this._notes.indexOf(note) < 0) {
+      this._notes.push(note)
+      const { onNoteActivated } = this.props
+      if (onNoteActivated) {
+        onNoteActivated(note)
+      }
+    }
+  }
+
+  _deactivateNote (note) {
+    const index = this._notes.indexOf(note)
+    if (index >= 0) {
+      this._notes.splice(index, 1)
+      const { onNoteDeactivated } = this.props
+      if (onNoteDeactivated) {
+        onNoteDeactivated(note)
+      }
+    }
   }
 
   _hitTestNote (x, y) {
-    let note = -1
+    if (x < 0 || x >= KEYBOARD_WIDTH || y < 0 || y >= KEYBOARD_HEIGHT) {
+      return -1
+    }
 
-    return note
+    for (let i = 0; i < NUM_WHITE_KEYS; i++) {
+      // Black keys
+      const indexInOctave = i % 7
+      if (indexInOctave !== 0 && indexInOctave !== 3) {
+        const keyCenter = i * KEY_WIDTH
+        if (x >= keyCenter - BLACK_KEY_HALF_WIDTH && x < keyCenter + BLACK_KEY_HALF_WIDTH &&
+          y < BLACK_KEY_HEIGHT) {
+          let note = 35 + i * 2  // 35 is B2
+          if (indexInOctave > 3) {
+            note--
+          }
+          return note - 2 * Math.floor(i / 7)
+        }
+      }
+    }
+
+    // White keys
+    const i = Math.floor(x / KEY_WIDTH)
+    const indexInOctave = i % 7
+
+    let note = 36 + i * 2 // 36 is C3
+    if (indexInOctave > 2) {
+      note--
+    }
+    return note - 2 * Math.floor(i / 7)
   }
 
   render () {

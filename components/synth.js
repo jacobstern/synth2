@@ -4,17 +4,28 @@ import Playback from '../core/playback'
 
 export default class extends Component {
 
-  render () {
-    return (
-      <div>
-        <Keyboard />
-      </div>
-    )
-  }
-
   componentDidMount () {
     if (!Playback.initialized) {
       Playback.init()
     }
+  }
+
+  _onNoteActivated = note => {
+    console.log(note)
+  }
+
+  _onNoteDeactivated = note => {
+
+  }
+
+  render () {
+    return (
+      <div>
+        <Keyboard
+          onNoteActivated={this._onNoteActivated}
+          onNoteDeactivated={this._onNoteDeactivated}
+        />
+      </div>
+    )
   }
 }
