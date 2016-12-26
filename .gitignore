@@ -5,4 +5,4 @@ typings
 npm-debug.log
 .vscode/launch.json
 .vscode/.browse.VC.db
-static/dst/*
+static/dst/module.js
