@@ -5,9 +5,11 @@ import Playback from '../core/playback'
 export default class extends Component {
 
   componentDidMount () {
-    if (!Playback.initialized) {
-      Playback.init()
-    }
+    Playback.init()
+      .then(() => {
+        const patch = this.props.patches[0]
+        Playback.setSynthesizerPatch(patch)
+      })
   }
 
   _onNoteActivated = note => {

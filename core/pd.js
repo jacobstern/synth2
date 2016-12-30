@@ -1,10 +1,9 @@
-import uuid from 'uuid'
-
 let _zenGarden
 let _zenGardenContext
 let _audioContext
 let _scriptProcessor
 let _patchEntries = {}
+let _globalId = 0
 
 function _getScript (id, source) {
   return new Promise(function (resolve, reject) {
@@ -24,9 +23,11 @@ function _getScript (id, source) {
 
     script.onerror = reject
     script.onload = script.onreadystatechange = function () {
-      if (!script.readyState || /loaded|complete/.test(script.readyState)) {
+      if (!script.readyState || completeRegex.test(script.readyState)) {
         script.onload = script.onreadystatechange = null
         script = null
+
+        resolve()
       }
     }
 
@@ -65,17 +66,25 @@ export default {
   },
 
   loadPatch (source, localAbstractions) {
-    const id = uuid.v1()
     const FS = window.FS
+    const id = _globalId++
+    const directory = 'patch' + id
+    const fileName = 'main.pd'
+    const filePath = directory + '/' + fileName
 
-    FS.mkdir(id)
-    FS.writeFile(id + '/' + id, source)
+    FS.mkdir(directory)
+    FS.writeFile(filePath, source)
 
-    _patchEntries[id] = { id }
+    const graph = _zenGarden.context_new_graph_from_file(_zenGardenContext, directory + '/', fileName)
+    _zenGarden.graph_attach(graph)
+
+    _patchEntries[id] = {
+      main: graph
+    }
 
     if (localAbstractions) {
       for (let key in localAbstractions) {
-        FS.writeFile(id + '/' + key, localAbstractions[key])
+        FS.writeFile(directory + '/' + key, localAbstractions[key])
       }
 
       _patchEntries[id].localAbstractions = Object.keys(localAbstractions)

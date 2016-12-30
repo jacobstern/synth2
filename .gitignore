@@ -6,3 +6,4 @@ npm-debug.log
 .vscode/launch.json
 .vscode/.browse.VC.db
 static/dst/module.js
+.env
