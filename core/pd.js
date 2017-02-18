@@ -2,8 +2,7 @@ let _zenGarden
 let _zenGardenContext
 let _audioContext
 let _scriptProcessor
-let _patchEntries = {}
-let _globalId = 0
+let _isStarted = false
 
 function _getScript (id, source) {
   return new Promise(function (resolve, reject) {
@@ -39,12 +38,19 @@ function _initZenGarden () {
   const Module = window.Module
   _zenGarden = {
     context_new: Module.cwrap('zg_context_new', 'number', ['number', 'number', 'number', 'number', 'number']),
-    context_new_graph_from_file: Module.cwrap('zg_context_new_graph_from_file', 'number', ['number', 'string', 'string']),
+    context_new_graph_from_string: Module.cwrap('zg_context_new_graph_from_string', 'number', ['number', 'string']),
+    context_register_memorymapped_abstraction: Module.cwrap('zg_context_register_memorymapped_abstraction', null, ['number', 'string', 'string']),
+    context_unregister_memorymapped_abstraction: Module.cwrap('zg_context_unregister_memorymapped_abstraction', null, ['number', 'string']),
     graph_attach: Module.cwrap('zg_graph_attach', null, ['number']),
+    graph_delete: Module.cwrap('zg_graph_delete', null, ['number']),
     context_process: Module.cwrap('zg_context_process', null, ['number', 'number', 'number']),
     context_delete: Module.cwrap('zg_context_delete', null, ['number']),
-    context_send_messageV: Module.cwrap('zg_context_send_messageV', null, ['number', 'string', 'number', 'string']),
-    context_send_messageV1n: Module.cwrap('zg_context_send_messageV', null, ['number', 'string', 'number', 'string', 'number'])
+    context_send_message: Module.cwrap('zg_context_send_message', null, ['number', 'string', 'number']),
+    message_new: Module.cwrap('zg_message_new', 'number', ['number', 'number']),
+    message_delete: Module.cwrap('zg_message_delete', null, ['number']),
+    message_set_float: Module.cwrap('zg_message_set_float', null, ['number', 'number', 'number']),
+    message_set_symbol: Module.cwrap('zg_message_set_symbol', null, ['number', 'number', 'string']),
+    message_set_bang: Module.cwrap('zg_message_set_bang', null, ['number', 'number'])
   }
 }
 
@@ -65,49 +71,71 @@ export default {
       })
   },
 
-  loadPatch (source, localAbstractions) {
-    const FS = window.FS
-    const id = _globalId++
-    const directory = 'patch' + id
-    const fileName = 'main.pd'
-    const filePath = directory + '/' + fileName
-
-    FS.mkdir(directory)
-    FS.writeFile(filePath, source)
-
-    const graph = _zenGarden.context_new_graph_from_file(_zenGardenContext, directory + '/', fileName)
+  loadPatch (source) {
+    const graph = _zenGarden.context_new_graph_from_string(_zenGardenContext, source)
     _zenGarden.graph_attach(graph)
 
-    _patchEntries[id] = {
-      main: graph
+    return {
+      _ptr: graph
     }
-
-    if (localAbstractions) {
-      for (let key in localAbstractions) {
-        FS.writeFile(directory + '/' + key, localAbstractions[key])
-      }
-
-      _patchEntries[id].localAbstractions = Object.keys(localAbstractions)
-    }
-
-    return id
   },
 
-  unloadPatch (id) {
-    const entry = _patchEntries[id]
-    const FS = window.FS
+  destroyPatch (patch) {
+    _zenGarden.graph_delete(patch._ptr)
+  },
 
-    if (entry) {
-      const abstractions = entry.localAbstractions
+  registerAbstraction (name, source) {
+    _zenGarden.context_register_memorymapped_abstraction(_zenGardenContext, name, source)
+  },
 
-      if (abstractions) {
-        abstractions.forEach(name => FS.rm(id + '/' + name))
+  send (receiver, args) {
+    const message = _zenGarden.message_new(0.0, args.length)
+
+    args.forEach((arg, index) => {
+      if (typeof arg === 'number') {
+        _zenGarden.message_set_float(message, index, arg)
+      } else if (typeof arg === 'string') {
+        _zenGarden.message_set_symbol(message, index, arg)
+      } else {
+        throw new Error('Invalid message arg: ' + arg)
       }
+    })
 
-      FS.rm(id + '/' + id)
-      FS.rmdir(id)
+    _zenGarden.context_send_message(_zenGardenContext, receiver, message)
+    _zenGarden.message_delete(message)
+  },
 
-      _patchEntries[id] = undefined
+  start () {
+    if (_isStarted) {
+      return
     }
+
+    const Module = window.Module
+    const blockSize = _scriptProcessor.bufferSize
+    const bufferSize = blockSize * 2 * 4
+    const scriptOutputPtr = Module._malloc(bufferSize)
+    const scriptOutputBuffer = Module.HEAPU8.subarray(scriptOutputPtr, scriptOutputPtr + bufferSize)
+    const outputBufferChannel1 = new Float32Array(
+      scriptOutputBuffer.buffer,
+      scriptOutputBuffer.byteOffset,
+      blockSize
+    )
+    const outputBufferChannel2 = new Float32Array(
+      scriptOutputBuffer.buffer,
+      scriptOutputBuffer.byteOffset + blockSize * 4,
+      blockSize
+    )
+
+    _scriptProcessor.onaudioprocess = audioProcessingEvent => {
+      _zenGarden.context_process(_zenGardenContext, 0, scriptOutputPtr)
+
+      const outputBuffer = audioProcessingEvent.outputBuffer
+
+      outputBuffer.copyToChannel(outputBufferChannel1, 0)
+      outputBuffer.copyToChannel(outputBufferChannel2, 1)
+    }
+
+    _scriptProcessor.connect(_audioContext.destination)
+    _isStarted = true
   }
 }

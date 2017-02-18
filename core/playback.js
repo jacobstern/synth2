@@ -1,10 +1,7 @@
 import Pd from './pd'
-import { getPureDataPatch } from '../common/api'
-
-const MOTHER_PATCH_ID = 'UHVyZURhdGFQYXRjaDoxMg=='
 
 let _initialized = false
-let _currentSynthesizerPatch = -1
+let _currentSynthesizerPatch = null
 
 export default {
 
@@ -17,19 +14,39 @@ export default {
       return Promise.resolve()
     }
 
-    return Promise.all([Pd.init(), getPureDataPatch(MOTHER_PATCH_ID)])
-      .then(([_, patchDefinition]) => {
-        Pd.loadPatch(patchDefinition.source)
-        _initialized = true
-      })
+    return Pd.init().then(() => {
+      Pd.start()
+      _initialized = true
+    })
+  },
+
+  noteOn (number) {
+    if (!_initialized) {
+      return
+    }
+
+    Pd.send('notes', [number, 100])
+  },
+
+  noteOff (number) {
+    if (!_initialized) {
+      return
+    }
+
+    Pd.send('notes', [number, 0])
   },
 
   setSynthesizerPatch (patchDefinition) {
-    const abstractions = {}
-    for (let { name, source } in patchDefinition.abstractions) {
-      abstractions[name] = source
+    if (_currentSynthesizerPatch !== null) {
+      Pd.destroyPatch(_currentSynthesizerPatch)
     }
 
-    _currentSynthesizerPatch = Pd.loadPatch(patchDefinition.source, abstractions)
+    if (patchDefinition.abstractions) {
+      patchDefinition.abstractions.forEach(abstraction => {
+        Pd.registerAbstraction(abstraction.name, abstraction.source)
+      })
+    }
+
+    _currentSynthesizerPatch = Pd.loadPatch(patchDefinition.source)
   }
 }

@@ -1,5 +1,5 @@
 import { Component } from 'react'
-import css, { merge } from 'next/css'
+import { css, merge } from 'glamor'
 
 const KEYBOARD_WIDTH = 600
 const KEYBOARD_HEIGHT = 150
@@ -133,7 +133,7 @@ export default class extends Component {
         const keyCenter = i * KEY_WIDTH
         if (x >= keyCenter - BLACK_KEY_HALF_WIDTH && x < keyCenter + BLACK_KEY_HALF_WIDTH &&
           y < BLACK_KEY_HEIGHT) {
-          let note = 35 + i * 2  // 35 is B2
+          let note = 47 + i * 2  // 47 is B2
           if (indexInOctave > 3) {
             note--
           }
@@ -146,7 +146,7 @@ export default class extends Component {
     const i = Math.floor(x / KEY_WIDTH)
     const indexInOctave = i % 7
 
-    let note = 36 + i * 2 // 36 is C3
+    let note = 48 + i * 2 // 48 is C3
     if (indexInOctave > 2) {
       note--
     }
