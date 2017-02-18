@@ -4,7 +4,23 @@ import Keyboard from './keyboard'
 import ParamSlider from './param-slider'
 import Playback from '../core/playback'
 
+const KEYMAP = {
+  'q': 48,
+  '2': 49,
+  'w': 50,
+  '3': 51,
+  'e': 52,
+  'r': 53,
+  '5': 54,
+  't': 55
+}
+
 export default class extends Component {
+
+  constructor (props) {
+    super(props)
+    this._keyboardNotes = new Set()
+  }
 
   async componentDidMount () {
     await Playback.init()
@@ -24,6 +40,18 @@ export default class extends Component {
         { name: 'sample_audio_note', source: sample_audio_note }
       ]
     })
+    // Need a better way of handling key input
+    document.addEventListener('keydown', this._onKeyDown)
+    document.addEventListener('keyup', this._onKeyUp)
+  }
+
+  componentWillUnmount () {
+    this._keyboardNotes.forEach(note => {
+      Playback.noteOff(note)
+    })
+    this._keyboardNotes.clear()
+    document.removeEventListener('keydown', this._onKeyDown)
+    document.removeEventListener('keyup', this._onKeyUp)
   }
 
   _onNoteActivated = note => {
@@ -34,9 +62,25 @@ export default class extends Component {
     Playback.noteOff(note)
   }
 
+  _onKeyDown = event => {
+    const note = KEYMAP[event.key]
+    if (typeof note === 'number' && !this._keyboardNotes.has(note)) {
+      this._keyboardNotes.add(note)
+      Playback.noteOn(note)
+    }
+  }
+
+  _onKeyUp = event => {
+    const note = KEYMAP[event.key]
+    if (typeof note === 'number' && this._keyboardNotes.has(note)) {
+      this._keyboardNotes.delete(note)
+      Playback.noteOff(note)
+    }
+  }
+
   render () {
     return (
-      <div>
+      <div onKeyPress={this._onKeyDown}>
         <ParamSlider />
         <Keyboard
           onNoteActivated={this._onNoteActivated}
