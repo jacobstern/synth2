@@ -1,8 +1,8 @@
 import { Component } from 'react'
-import fetch from 'isomorphic-fetch'
 import Keyboard from './keyboard'
 import ParamSlider from './param-slider'
 import Playback from '../core/playback'
+import testPatch from '../core/patches/test'
 
 const KEYMAP = {
   'q': 48,
@@ -24,22 +24,7 @@ export default class extends Component {
 
   async componentDidMount () {
     await Playback.init()
-    const responses = await Promise.all([
-      fetch('static/pd/sample_audio.pd'),
-      fetch('static/pd/sample_audio_note.pd')
-    ])
-    const [
-      main,
-      sample_audio_note // eslint-disable-line camelcase
-    ] = await Promise.all(responses.map(
-      response => response.text()
-    ))
-    Playback.setSynthesizerPatch({
-      source: main,
-      abstractions: [
-        { name: 'sample_audio_note', source: sample_audio_note }
-      ]
-    })
+    Playback.setSynthesizerPatch(testPatch)
     // Need a better way of handling key input
     document.addEventListener('keydown', this._onKeyDown)
     document.addEventListener('keyup', this._onKeyUp)
@@ -80,7 +65,7 @@ export default class extends Component {
 
   render () {
     return (
-      <div onKeyPress={this._onKeyDown}>
+      <div>
         <ParamSlider />
         <Keyboard
           onNoteActivated={this._onNoteActivated}

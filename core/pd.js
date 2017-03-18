@@ -2,6 +2,7 @@ let _zenGarden
 let _zenGardenContext
 let _audioContext
 let _scriptProcessor
+let _initialized = false
 let _isStarted = false
 
 function _getScript (id, source) {
@@ -64,10 +65,19 @@ function _initAudio () {
 
 export default {
   init () {
+    if (_initialized) {
+      return
+    }
+
     return _getScript('__Emscripten_module', 'static/dst/module.js')
       .then(() => {
+        if (_initialized) {
+          return
+        }
+
         _initZenGarden()
         _initAudio()
+        _initialized = true
       })
   },
 

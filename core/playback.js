@@ -1,4 +1,5 @@
 import Pd from './pd'
+import motherPatch from './patches/mother'
 
 let _initialized = false
 let _currentSynthesizerPatch = null
@@ -16,6 +17,9 @@ export default {
 
     return Pd.init().then(() => {
       Pd.start()
+      Pd.loadPatch(motherPatch.source)
+      Pd.send('vol', [0.6])
+
       _initialized = true
     })
   },
@@ -48,5 +52,10 @@ export default {
     }
 
     _currentSynthesizerPatch = Pd.loadPatch(patchDefinition.source)
+
+    Pd.send('knob1', [0.6])
+    Pd.send('knob2', [0.6])
+    Pd.send('knob3', [0.6])
+    Pd.send('knob4', [0.6])
   }
 }
