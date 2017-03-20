@@ -60,6 +60,7 @@ export default class extends Component {
   }
 
   _onMouseDown = event => {
+    event.preventDefault()
     this._activateMouseNote(event)
   }
 
@@ -70,6 +71,7 @@ export default class extends Component {
   }
 
   _onMouseUp = event => {
+    event.preventDefault()
     this._deactivateMouseNote()
   }
 
@@ -161,6 +163,7 @@ export default class extends Component {
         className={merge(styles.root, css)}
       >
         <canvas
+          className={styles.canvas}
           ref={this._setCanvasRef}
           onMouseDown={this._onMouseDown}
           onMouseMove={this._onMouseMove}
@@ -176,5 +179,8 @@ const styles = {
   root: css({
     width: '600px',
     height: '150px'
+  }),
+  canvas: css({
+    cursor: 'arrow'
   })
 }

@@ -40,6 +40,14 @@ export default {
     Pd.send('notes', [number, 0])
   },
 
+  auxButtonPressed () {
+    Pd.send('aux', [1])
+  },
+
+  auxButtonReleased () {
+    Pd.send('aux', [0])
+  },
+
   setSynthesizerPatch (patchDefinition) {
     if (_currentSynthesizerPatch !== null) {
       Pd.destroyPatch(_currentSynthesizerPatch)
@@ -53,9 +61,9 @@ export default {
 
     _currentSynthesizerPatch = Pd.loadPatch(patchDefinition.source)
 
-    Pd.send('knob1', [0.6])
-    Pd.send('knob2', [0.6])
-    Pd.send('knob3', [0.6])
-    Pd.send('knob4', [0.6])
+    Pd.send('knob1', [0.5])
+    Pd.send('knob2', [0.3])
+    Pd.send('knob3', [0.3])
+    Pd.send('knob4', [0.3])
   }
 }

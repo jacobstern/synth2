@@ -102,12 +102,15 @@ export default {
     const message = _zenGarden.message_new(0.0, args.length)
 
     args.forEach((arg, index) => {
-      if (typeof arg === 'number') {
-        _zenGarden.message_set_float(message, index, arg)
-      } else if (typeof arg === 'string') {
-        _zenGarden.message_set_symbol(message, index, arg)
-      } else {
-        throw new Error('Invalid message arg: ' + arg)
+      switch (typeof arg) {
+        case 'number':
+          _zenGarden.message_set_float(message, index, arg)
+          break
+        case 'string':
+          _zenGarden.message_set_symbol(message, index, arg)
+          break
+        default:
+          throw new Error('Invalid message arg: ' + arg)
       }
     })
 

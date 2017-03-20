@@ -1,19 +1,20 @@
 import { Component } from 'react'
+import AuxButton from './aux-button'
 import Keyboard from './keyboard'
 import ParamSlider from './param-slider'
 import Playback from '../core/playback'
-import testPatch from '../core/patches/test'
+import basicPoly from '../core/patches/basic-poly'
 
-const KEYMAP = {
-  'q': 48,
-  '2': 49,
-  'w': 50,
-  '3': 51,
-  'e': 52,
-  'r': 53,
-  '5': 54,
-  't': 55
-}
+const keyMap = new Map([
+  ['q', 48],
+  ['2', 49],
+  ['w', 50],
+  ['3', 51],
+  ['e', 52],
+  ['r', 53],
+  ['5', 54],
+  ['t', 55]
+])
 
 export default class extends Component {
 
@@ -24,7 +25,7 @@ export default class extends Component {
 
   async componentDidMount () {
     await Playback.init()
-    Playback.setSynthesizerPatch(testPatch)
+    Playback.setSynthesizerPatch(basicPoly)
     // Need a better way of handling key input
     document.addEventListener('keydown', this._onKeyDown)
     document.addEventListener('keyup', this._onKeyUp)
@@ -48,7 +49,7 @@ export default class extends Component {
   }
 
   _onKeyDown = event => {
-    const note = KEYMAP[event.key]
+    const note = keyMap.get(event.key)
     if (typeof note === 'number' && !this._keyboardNotes.has(note)) {
       this._keyboardNotes.add(note)
       Playback.noteOn(note)
@@ -56,17 +57,31 @@ export default class extends Component {
   }
 
   _onKeyUp = event => {
-    const note = KEYMAP[event.key]
+    const note = keyMap.get(event.key)
     if (typeof note === 'number' && this._keyboardNotes.has(note)) {
       this._keyboardNotes.delete(note)
       Playback.noteOff(note)
     }
   }
 
+  _onAuxMouseDown = event => {
+    event.preventDefault()
+    Playback.auxButtonPressed()
+  }
+
+  _onAuxMouseUp = event => {
+    event.preventDefault()
+    Playback.auxButtonReleased()
+  }
+
   render () {
     return (
       <div>
         <ParamSlider />
+        <AuxButton
+          onMouseDown={this._onAuxMouseDown}
+          onMouseUp={this._onAuxMouseUp}
+        />
         <Keyboard
           onNoteActivated={this._onNoteActivated}
           onNoteDeactivated={this._onNoteDeactivated}
