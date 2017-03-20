@@ -3,7 +3,9 @@ const path = require('path')
 const commandLineArgs = require('command-line-args')
 
 const optionDefinitions = [
-  { name: 'directory', type: String, defaultOption: true, defaultValue: '.' }
+  { name: 'directory', type: String, defaultOption: true, defaultValue: '.' },
+  { name: 'js', type: Boolean, defaultValue: false },
+  { name: 'out', type: String }
 ]
 const options = commandLineArgs(optionDefinitions)
 const directory = options.directory
@@ -34,4 +36,10 @@ const json = JSON.stringify({
   source,
   abstractions
 })
-fs.writeFileSync(path.join(directory, 'patch.json'), json)
+const outputFile = options.out || path.join(directory, options.js ? 'patch.js' : 'patch.json')
+if (options.js) {
+  fs.writeFileSync(outputFile, 'export default ' + json)
+} else {
+  fs.writeFileSync(outputFile, json)
+}
+
