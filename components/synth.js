@@ -20,72 +20,134 @@ export default class extends Component {
 
   constructor (props) {
     super(props)
-    this._keyboardNotes = new Set()
+    this.state = {
+      knobValues: [0.5, 0.3, 0.3, 0.3],
+      volume: 0.8
+    }
+    this.keyboardNotes = new Set()
   }
 
   async componentDidMount () {
     await Playback.init()
     Playback.setSynthesizerPatch(basicPoly)
-    // Need a better way of handling key input
-    document.addEventListener('keydown', this._onKeyDown)
-    document.addEventListener('keyup', this._onKeyUp)
+    this.state.knobValues.forEach((value, index) => {
+      Playback.setKnobValue(index, parseFloat(value))
+    })
+    Playback.setVolume(this.state.volume)
+
+    // TODO: Need a better way of handling key input
+    document.addEventListener('keydown', this.onKeyDown)
+    document.addEventListener('keyup', this.onKeyUp)
   }
 
   componentWillUnmount () {
-    this._keyboardNotes.forEach(note => {
+    this.keyboardNotes.forEach(note => {
       Playback.noteOff(note)
     })
-    this._keyboardNotes.clear()
-    document.removeEventListener('keydown', this._onKeyDown)
-    document.removeEventListener('keyup', this._onKeyUp)
+    this.keyboardNotes.clear()
+    document.removeEventListener('keydown', this.onKeyDown)
+    document.removeEventListener('keyup', this.onKeyUp)
   }
 
-  _onNoteActivated = note => {
+  onNoteActivated = note => {
     Playback.noteOn(note)
   }
 
-  _onNoteDeactivated = note => {
+  onNoteDeactivated = note => {
     Playback.noteOff(note)
   }
 
-  _onKeyDown = event => {
+  onKeyDown = event => {
     const note = keyMap.get(event.key)
-    if (typeof note === 'number' && !this._keyboardNotes.has(note)) {
-      this._keyboardNotes.add(note)
+    if (typeof note === 'number' && !this.keyboardNotes.has(note)) {
+      this.keyboardNotes.add(note)
       Playback.noteOn(note)
     }
   }
 
-  _onKeyUp = event => {
+  onKeyUp = event => {
     const note = keyMap.get(event.key)
-    if (typeof note === 'number' && this._keyboardNotes.has(note)) {
-      this._keyboardNotes.delete(note)
+    if (typeof note === 'number' && this.keyboardNotes.has(note)) {
+      this.keyboardNotes.delete(note)
       Playback.noteOff(note)
     }
   }
 
-  _onAuxMouseDown = event => {
+  onAuxMouseDown = event => {
     event.preventDefault()
     Playback.auxButtonPressed()
   }
 
-  _onAuxMouseUp = event => {
+  onAuxMouseUp = event => {
     event.preventDefault()
     Playback.auxButtonReleased()
   }
 
-  render () {
+  onVolumeValueUpdate = value => {
+    this.setState({ volume: value })
+    Playback.setVolume(value)
+  }
+
+  renderKnob (index) {
+    const onValueUpdate = value => {
+      const updated = this.state.knobValues.slice(0)
+      updated[index] = value
+      this.setState({ knobValues: updated })
+
+      if (Playback.initialized) {
+        Playback.setKnobValue(index, value)
+      }
+    }
     return (
-      <div>
-        <ParamSlider />
-        <AuxButton
-          onMouseDown={this._onAuxMouseDown}
-          onMouseUp={this._onAuxMouseUp}
-        />
+      <ParamSlider
+        value={this.state.knobValues[index]}
+        onValueUpdate={onValueUpdate}
+      />
+    )
+  }
+
+  render () {
+    const { volume } = this.state
+    return (
+      <div className='synth'>
+        <div className='upper-content'>
+          <div className='left'>
+            {this.renderKnob(0)}
+            {this.renderKnob(1)}
+            {this.renderKnob(2)}
+            {this.renderKnob(3)}
+            <AuxButton
+              onMouseDown={this.onAuxMouseDown}
+              onMouseUp={this.onAuxMouseUp}
+            />
+          </div>
+          <div className='right'>
+            <ParamSlider
+              value={volume}
+              onValueUpdate={this.onVolumeValueUpdate}
+            />
+          </div>
+        </div>
         <Keyboard
-          onNoteActivated={this._onNoteActivated}
-          onNoteDeactivated={this._onNoteDeactivated}
+          onNoteActivated={this.onNoteActivated}
+          onNoteDeactivated={this.onNoteDeactivated}
         />
+        <style jsx>{`
+          .upper-content {
+            display: flex;
+          }
+          .left {
+            width: 50%;
+            margin: 12px;
+          }
+          .right {
+            width: 50%;
+            margin: 12px;
+          }
+          .aux-button {
+            margin-left: 2px;
+          }
+        `}</style>
       </div>
     )
   }

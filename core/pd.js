@@ -66,7 +66,7 @@ function _initAudio () {
 export default {
   init () {
     if (_initialized) {
-      return
+      return Promise.resolve()
     }
 
     return _getScript('__Emscripten_module', 'static/dst/module.js')
@@ -99,6 +99,9 @@ export default {
   },
 
   send (receiver, args) {
+    if (typeof args === 'number' || typeof args === 'string') {
+      args = [args]
+    }
     const message = _zenGarden.message_new(0.0, args.length)
 
     args.forEach((arg, index) => {

@@ -1,18 +1,21 @@
-import { css } from 'glamor'
-
-const ParamSlider = (css, value) => (
-  <div className={css}>
-    <input
-      className={styles.input}
-      type='range'
-    />
-  </div>
-)
-
-const styles = {
-  input: css({
-    width: '250px'
-  })
+const ParamSlider = ({ value, onValueUpdate }) => {
+  const onChange = event => {
+    onValueUpdate(parseFloat(event.target.value) / 100)
+  }
+  return (
+    <div>
+      <input
+        type='range'
+        value={'' + value * 100}
+        onChange={onChange}
+      />
+      <style jsx>{`
+        input[type=range] {
+          width: 250px;
+        }
+      `}</style>
+    </div>
+  )
 }
 
 export default ParamSlider

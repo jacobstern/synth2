@@ -5,7 +5,19 @@ export default class extends Component {
 
   render () {
     return (
-      <Synth />
+      <div className='page-root'>
+        <Synth />
+        <style jsx>{`
+          .page-root {
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            position: absolute;
+            height: 100%;
+            width: 100%;
+          }
+        `}</style>
+      </div>
     )
   }
 }
