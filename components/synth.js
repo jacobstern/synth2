@@ -1,5 +1,6 @@
 import { Component } from 'react'
 import AuxButton from './aux-button'
+import AuxIndicator from './aux-indicator'
 import Keyboard from './keyboard'
 import ParamSlider from './param-slider'
 import Playback from '../core/playback'
@@ -36,7 +37,8 @@ export default class extends Component {
     this.state = {
       knobValues: [0.5, 0.3, 0.3, 0.3],
       volume: 0.8,
-      screen: ['', '', '', '', '']
+      screen: ['', '', '', '', ''],
+      led: null
     }
     this.keyboardNotes = new Set()
   }
@@ -55,6 +57,9 @@ export default class extends Component {
     Playback.addListener('screenLine3', handleLineUpdate(2))
     Playback.addListener('screenLine4', handleLineUpdate(3))
     Playback.addListener('screenLine5', handleLineUpdate(4))
+    Playback.addListener('led', color => {
+      this.setState({ led: color })
+    })
 
     Playback.setSynthesizerPatch(basicPoly)
     this.state.knobValues.forEach((value, index) => {
@@ -138,7 +143,7 @@ export default class extends Component {
   }
 
   render () {
-    const { volume, screen } = this.state
+    const { volume, screen, led } = this.state
     return (
       <div>
         <div className='upper-content'>
@@ -147,10 +152,13 @@ export default class extends Component {
             {this.renderKnob(1)}
             {this.renderKnob(2)}
             {this.renderKnob(3)}
-            <AuxButton
-              onMouseDown={this.onAuxMouseDown}
-              onMouseUp={this.onAuxMouseUp}
-            />
+            <div>
+              <AuxButton
+                onMouseDown={this.onAuxMouseDown}
+                onMouseUp={this.onAuxMouseUp}
+              />
+              <AuxIndicator value={led} />
+            </div>
           </div>
           <div className='right'>
             <Screen

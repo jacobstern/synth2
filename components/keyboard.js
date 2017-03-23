@@ -159,7 +159,6 @@ export default class extends Component {
     return (
       <div className='root'>
         <canvas
-          className='canvas'
           ref={this._setCanvasRef}
           onMouseDown={this._onMouseDown}
           onMouseMove={this._onMouseMove}
@@ -167,12 +166,9 @@ export default class extends Component {
           onMouseOut={this._onMouseOut}
         />
         <style jsx>{`
-          .root: {
+          .root {
             width: 600px;
             height: 150px;
-          }
-          .canvas: {
-            cursor: 'arrow';
           }
         `}</style>
       </div>

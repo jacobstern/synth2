@@ -38,6 +38,10 @@ class PlaybackManager extends EventEmitter {
       Pd.receive('screenLine3', handleScreenMessage('screenLine3'))
       Pd.receive('screenLine4', handleScreenMessage('screenLine4'))
       Pd.receive('screenLine5', handleScreenMessage('screenLine5'))
+      Pd.receive('led', value => {
+        const color = parseInt(value[0])
+        this.emitEvent('led', [color])
+      })
 
       this._initialized = true
     })

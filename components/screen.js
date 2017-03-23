@@ -10,6 +10,10 @@ const Screen = ({ line1, line2, line3, line4, line5 }) => (
         font-family: 'SF Mono', 'Monaco', 'Inconsolata', 'Fira Mono', 'Droid Sans Mono', 'Source Code Pro', monospace;
         font-size: 12px;
         line-height: 16px;
+        padding: 6px;
+        margin: 6px 0;
+        background: #E0E0E0;
+        border-radius: 3px;
       }
       .line {
         height: 16px;
