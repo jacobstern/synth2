@@ -1,9 +1,12 @@
 let _zenGarden
+let _callbackFunctionPtr
 let _zenGardenContext
+let _helpers
 let _audioContext
 let _scriptProcessor
 let _initialized = false
 let _isStarted = false
+let _receivers = new Map()
 
 function _getScript (id, source) {
   return new Promise(function (resolve, reject) {
@@ -35,6 +38,43 @@ function _getScript (id, source) {
   })
 }
 
+function _getMessageElements (message) {
+  const numElements = _zenGarden.message_get_num_elements(message)
+  const elements = []
+
+  for (let i = 0; i < numElements; i++) {
+    switch (_zenGarden.message_get_element_type(message, i)) {
+      case MessageElementType.bang:
+        elements.push('bang')
+        break
+      case MessageElementType.float:
+        const value = _zenGarden.message_get_float(message, i)
+        elements.push(value)
+        break
+      case MessageElementType.symbol:
+        const symbol = _zenGarden.message_get_symbol(message, i)
+        elements.push(symbol)
+        break
+    }
+  }
+
+  return elements
+}
+
+function _callbackFunction (functionType, userData, ptr) {
+  if (functionType === CallbackFunctionType.receiverMessage) {
+    const name = _helpers.name_message_pair_get_name(ptr)
+    const receiver = _receivers.get(name)
+
+    if (typeof receiver === 'function') {
+      const message = _helpers.name_message_pair_get_message(ptr)
+      const messageElements = _getMessageElements(message)
+
+      receiver(messageElements)
+    }
+  }
+}
+
 function _initZenGarden () {
   const Module = window.Module
   _zenGarden = {
@@ -51,8 +91,33 @@ function _initZenGarden () {
     message_delete: Module.cwrap('zg_message_delete', null, ['number']),
     message_set_float: Module.cwrap('zg_message_set_float', null, ['number', 'number', 'number']),
     message_set_symbol: Module.cwrap('zg_message_set_symbol', null, ['number', 'number', 'string']),
-    message_set_bang: Module.cwrap('zg_message_set_bang', null, ['number', 'number'])
+    message_set_bang: Module.cwrap('zg_message_set_bang', null, ['number', 'number']),
+    context_register_receiver: Module.cwrap('zg_context_register_receiver', null, ['number', 'string']),
+    context_unregister_receiver: Module.cwrap('zg_context_unregister_receiver', null, ['number', 'string']),
+    message_get_num_elements: Module.cwrap('zg_message_get_num_elements', 'number', ['number']),
+    message_get_element_type: Module.cwrap('zg_message_get_element_type', 'number', ['number', 'number']),
+    message_get_float: Module.cwrap('zg_message_get_float', 'number', ['number', 'number']),
+    message_get_symbol: Module.cwrap('zg_message_get_symbol', 'string', ['number', 'number'])
   }
+  _helpers = {
+    name_message_pair_get_name: Module.cwrap('name_message_pair_get_name', 'string', ['number']),
+    name_message_pair_get_message: Module.cwrap('name_message_pair_get_message', 'number', ['number'])
+  }
+  _callbackFunctionPtr = window.Runtime.addFunction(_callbackFunction)
+}
+
+const CallbackFunctionType = {
+  printStd: 0,
+  printErr: 1,
+  pdDSP: 2,
+  receiverMessage: 3,
+  cannotFindObject: 4
+}
+
+const MessageElementType = {
+  float: 0,
+  symbol: 1,
+  bang: 2
 }
 
 function _initAudio () {
@@ -60,7 +125,14 @@ function _initAudio () {
 
   _audioContext = new AudioContext()
   _scriptProcessor = _audioContext.createScriptProcessor(1024, 0, 2)
-  _zenGardenContext = _zenGarden.context_new(0, 2, _scriptProcessor.bufferSize, _audioContext.sampleRate, null, null)
+  _zenGardenContext = _zenGarden.context_new(
+    0,
+    2,
+    _scriptProcessor.bufferSize,
+    _audioContext.sampleRate,
+    _callbackFunctionPtr,
+    null
+  )
 }
 
 export default {
@@ -96,6 +168,11 @@ export default {
 
   registerAbstraction (name, source) {
     _zenGarden.context_register_memorymapped_abstraction(_zenGardenContext, name, source)
+  },
+
+  receive (name, callback) {
+    _receivers.set(name, callback)
+    _zenGarden.context_register_receiver(_zenGardenContext, name)
   },
 
   send (receiver, args) {

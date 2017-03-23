@@ -3,17 +3,30 @@ import AuxButton from './aux-button'
 import Keyboard from './keyboard'
 import ParamSlider from './param-slider'
 import Playback from '../core/playback'
+import Screen from './screen'
 import basicPoly from '../core/patches/basic-poly'
 
 const keyMap = new Map([
-  ['q', 48],
-  ['2', 49],
-  ['w', 50],
-  ['3', 51],
-  ['e', 52],
-  ['r', 53],
-  ['5', 54],
-  ['t', 55]
+  ['q', 60],
+  ['2', 61],
+  ['w', 62],
+  ['3', 63],
+  ['e', 64],
+  ['r', 65],
+  ['5', 66],
+  ['t', 67],
+  ['6', 68],
+  ['y', 69],
+  ['7', 70],
+  ['u', 71],
+  ['i', 72],
+  ['9', 73],
+  ['o', 74],
+  ['0', 75],
+  ['p', 76],
+  ['[', 77],
+  ['=', 78],
+  [']', 79]
 ])
 
 export default class extends Component {
@@ -22,13 +35,27 @@ export default class extends Component {
     super(props)
     this.state = {
       knobValues: [0.5, 0.3, 0.3, 0.3],
-      volume: 0.8
+      volume: 0.8,
+      screen: ['', '', '', '', '']
     }
     this.keyboardNotes = new Set()
   }
 
   async componentDidMount () {
     await Playback.init()
+
+    const handleLineUpdate = index => message => {
+      const screen = this.state.screen.splice(0)
+      screen[index] = message
+      this.setState({ screen })
+    }
+
+    Playback.addListener('screenLine1', handleLineUpdate(0))
+    Playback.addListener('screenLine2', handleLineUpdate(1))
+    Playback.addListener('screenLine3', handleLineUpdate(2))
+    Playback.addListener('screenLine4', handleLineUpdate(3))
+    Playback.addListener('screenLine5', handleLineUpdate(4))
+
     Playback.setSynthesizerPatch(basicPoly)
     this.state.knobValues.forEach((value, index) => {
       Playback.setKnobValue(index, parseFloat(value))
@@ -62,6 +89,10 @@ export default class extends Component {
     if (typeof note === 'number' && !this.keyboardNotes.has(note)) {
       this.keyboardNotes.add(note)
       Playback.noteOn(note)
+    }
+    if (event.key === '1') {
+      Playback.auxButtonPressed()
+      Playback.auxButtonReleased()
     }
   }
 
@@ -107,9 +138,9 @@ export default class extends Component {
   }
 
   render () {
-    const { volume } = this.state
+    const { volume, screen } = this.state
     return (
-      <div className='synth'>
+      <div>
         <div className='upper-content'>
           <div className='left'>
             {this.renderKnob(0)}
@@ -122,6 +153,13 @@ export default class extends Component {
             />
           </div>
           <div className='right'>
+            <Screen
+              line1={screen[0]}
+              line2={screen[1]}
+              line3={screen[2]}
+              line4={screen[3]}
+              line5={screen[4]}
+            />
             <ParamSlider
               value={volume}
               onValueUpdate={this.onVolumeValueUpdate}
@@ -143,9 +181,6 @@ export default class extends Component {
           .right {
             width: 50%;
             margin: 12px;
-          }
-          .aux-button {
-            margin-left: 2px;
           }
         `}</style>
       </div>

@@ -1,5 +1,4 @@
 import { Component } from 'react'
-import { css, merge } from 'glamor'
 
 const KEYBOARD_WIDTH = 600
 const KEYBOARD_HEIGHT = 150
@@ -135,7 +134,7 @@ export default class extends Component {
         const keyCenter = i * KEY_WIDTH
         if (x >= keyCenter - BLACK_KEY_HALF_WIDTH && x < keyCenter + BLACK_KEY_HALF_WIDTH &&
           y < BLACK_KEY_HEIGHT) {
-          let note = 47 + i * 2  // 47 is B2
+          let note = 59 + i * 2  // 59 is B3
           if (indexInOctave > 3) {
             note--
           }
@@ -148,7 +147,7 @@ export default class extends Component {
     const i = Math.floor(x / KEY_WIDTH)
     const indexInOctave = i % 7
 
-    let note = 48 + i * 2 // 48 is C3
+    let note = 60 + i * 2 // 60 is C4
     if (indexInOctave > 2) {
       note--
     }
@@ -156,31 +155,27 @@ export default class extends Component {
   }
 
   render () {
-    const { css, style } = this.props
+    const { style } = this.props
     return (
-      <div
-        style={style}
-        className={merge(styles.root, css)}
-      >
+      <div className='root'>
         <canvas
-          className={styles.canvas}
+          className='canvas'
           ref={this._setCanvasRef}
           onMouseDown={this._onMouseDown}
           onMouseMove={this._onMouseMove}
           onMouseUp={this._onMouseUp}
           onMouseOut={this._onMouseOut}
         />
+        <style jsx>{`
+          .root: {
+            width: 600px;
+            height: 150px;
+          }
+          .canvas: {
+            cursor: 'arrow';
+          }
+        `}</style>
       </div>
     )
   }
-}
-
-const styles = {
-  root: css({
-    width: '600px',
-    height: '150px'
-  }),
-  canvas: css({
-    cursor: 'arrow'
-  })
 }
